@@ -97,7 +97,7 @@ struct record {
 };
 
 struct stats_record {
-	struct record stats[1]; /* Assignment#2: Hint */
+	struct record stats[XDP_ACTION_MAX]; 
 };
 
 static double calc_period(struct record *r, struct record *p)
@@ -123,17 +123,17 @@ static void stats_print(struct stats_record *stats_rec,
 	double bps; /* bits per sec */
 
 	/* Assignment#2: Print other XDP actions stats  */
-	{
+	for (int i = 0; i < XDP_ACTION_MAX; i++) {
 		char *fmt = "%-12s %'11lld pkts (%'10.0f pps)"
 			" %'11lld bytes (%'6.0f bits/s)"
 			" period:%f\n";
-		const char *action = action2str(XDP_PASS);
-		rec  = &stats_rec->stats[0];
-		prev = &stats_prev->stats[0];
+		const char *action = action2str(i);
+		rec  = &stats_rec->stats[i];
+		prev = &stats_prev->stats[i];
 
 		period = calc_period(rec, prev);
 		if (period == 0)
-		       return;
+			continue;
 
 		packets = rec->total.rx_packets - prev->total.rx_packets;
 		bytes   = rec->total.rx_bytes   - prev->total.rx_bytes;
@@ -194,9 +194,9 @@ static void stats_collect(int map_fd, __u32 map_type,
 			  struct stats_record *stats_rec)
 {
 	/* Assignment#2: Collect other XDP actions stats  */
-	__u32 key = XDP_PASS;
-
-	map_collect(map_fd, map_type, key, &stats_rec->stats[0]);
+	for (int i = 0; i < XDP_ACTION_MAX; i++) {
+		map_collect(map_fd, map_type, i, &stats_rec->stats[i]);
+	}
 }
 
 static void stats_poll(int map_fd, __u32 map_type, int interval)
